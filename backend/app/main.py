@@ -5,7 +5,7 @@ app = FastAPI(
               title = "repository reviewer",
               description ="an ai powered repository code reviewer",
               version ="1.0")
-app.include(router)
+app.include_router(router)
 @app.get("/")
 async def root():
     return {"message" : "running"}
