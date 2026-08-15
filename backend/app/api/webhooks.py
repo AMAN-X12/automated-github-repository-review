@@ -3,6 +3,7 @@ import logging
 import hashlib
 import hmac
 import os
+import json
 from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
@@ -32,7 +33,7 @@ async def webhook_receiver(request:Request):
         )
     eventType = request.headers.get("X-GitHub-Event")
     if eventType == "pull_request":
-        payload =  await body.json()
+        payload =   json.loads(body)
         action = payload.get("action")
         repoName = payload.get("repository", {}).get("full_name","unknown_repo" )
         prNum = payload.get("pull_request", {}).get("number","unknown number")
