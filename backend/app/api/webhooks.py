@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
+from app.services.github_service import generate_JWS_Token
 
 router = APIRouter()
 @router.post("/webhook")
@@ -42,6 +43,15 @@ async def webhook_receiver(request:Request):
         logger.info(f"pull req number {prNum}")
         logger.info(f"owner {prAuthor}")
         logger.info(f"status {action}")
+        with open("automated-pr-reviewer-private-token.pem","r") as f :
+            privateKey = f.read()
+        if privateKey is None:
+            raise HTTPException(
+                status = 401,
+                detail= "missing private key "
+            )
+        jwtToken = generate_JWS_Token(os.getenv("GITHUB_APP_ID") , privateKey=privateKey)
+        logger.info(f"jwt token successfully created")
         return {
             "status": "successfull",
             "message" : f"pr event : {eventType} logged"
