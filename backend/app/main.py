@@ -1,12 +1,13 @@
 from fastapi import FastAPI
+from app.api.webhooks import router
 
-from app.api.webhooks import router as webhooks_router
+app = FastAPI( 
+              title = "repository reviewer",
+              description ="an ai powered repository code reviewer",
+              version ="1.0")
+app.include(router)
+@app.get("/")
+async def root():
+    return {"message" : "running"}
 
-app = FastAPI(title="AI PR Reviewer")
-
-app.include_router(webhooks_router)
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+    
