@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
+from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req)
 
 router = APIRouter()
 @router.post("/webhook")
@@ -38,10 +39,38 @@ async def webhook_receiver(request:Request):
         repoName = payload.get("repository", {}).get("full_name","unknown_repo" )
         prNum = payload.get("pull_request", {}).get("number","unknown number")
         prAuthor = payload.get("pull_request", {}).get("user", {}).get("login","unknown_author")
+        installation_id=payload.get("installation",{}).get("id")
         logger.info(f"rpository : {repoName}")
         logger.info(f"pull req number {prNum}")
         logger.info(f"owner {prAuthor}")
         logger.info(f"status {action}")
+        logger.info(f"installation id : {installation_id}")
+        if not installation_id :
+            raise HTTPException(
+                status_code=401,
+                detail="installation id missing "
+            )
+        with open("../automated-pr-reviewer-private-token.pem","r") as f :
+            privateKey = f.read()
+        if not privateKey:
+            raise HTTPException(
+                status_code  = 401,
+                detail= "missing private key "
+            )
+        jwtToken = generate_JWS_Token(os.getenv("GITHUB_APP_ID") , privateKey=privateKey)
+        logger.info(f"jwt token successfully created")  
+        installationToken = await  get_installation_token(installation_id,jwtToken)
+        if not installationToken:
+            raise HTTPException(
+                status_code=500,
+                detail="installation token generation failed"
+            )
+        logger.info(f"installation token received successfully")
+        prData= await get_pull_req(repoName , prNum , installationToken)
+        logger.info(f"title of repository : {prData["title"]}")
+        logger.info(f"description of repository : {prData["description"]}")
+        logger.info(f"base repository : {prData["base_branch"]}")
+        logger.info(f"head repository : {prData["head_branch"]}")
         return {
             "status": "successfull",
             "message" : f"pr event : {eventType} logged"
