@@ -14,8 +14,4 @@ Repository-aware AI code review agent.
 - Testing: pytest
 - Deployment: Docker + GitHub Actions
 
-## Development
 
-Backend and frontend setup will be added as the project is implemented.
-
-See `docs/build-plan.md` for the full roadmap.

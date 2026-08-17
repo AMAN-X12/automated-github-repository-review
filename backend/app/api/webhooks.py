@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
-from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files)
+from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files,get_pull_request_difference)
 
 router = APIRouter()
 @router.post("/webhook")
@@ -74,12 +74,10 @@ async def webhook_receiver(request:Request):
         logger.info(f"head repository : {prData["head_branch"]}")
         
         fileChanged = await get_changed_files(repoName,prNum, installationToken)
-        logger.info(f"fileNAme : {fileChanged["fileName"]}")
-        logger.info(f"status : {fileChanged["fileStatus"]}")
-        logger.info(f"additions : {fileChanged["added_lines"]}")
-        logger.info(f"deletions : {fileChanged["removed_lines"]}")
-        logger.info(f"changes : {fileChanged["number_of_changes"]}")
-        logger.info(f"patch : {fileChanged["patch"]}")
+        logger.info(f"files cahnegd meta deta are : {fileChanged}")
+        
+        prDifferences = await get_pull_request_difference(repoName, prNum, installationToken)
+        logger.info(f"the differences in files includes : {prDifferences}")
         return {
             "status": "successfull",
             "message" : f"pr event : {eventType} logged"
