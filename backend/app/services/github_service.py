@@ -66,18 +66,29 @@ async def get_changed_files(repoName , prNum , installationToken):
     async with httpx.AsyncClient() as client:
         response = await client.get(url,headers=headers)
     response.raise_for_status()
-    data = response.json()
-    return {
-            "fileName" : data.get("filename"),
-            "fileStatus" : data.get("status"),
-            "added_lines": data.get("additions"),
-            "removed_lines":data.get("deletions"),
-            "patch" : data.get("patch"),
-            "number_of_changes" : data.get("changes")
-            
+    dataList = response.json()
+    changedFIles=[]
+    for data in dataList:
+        changedFIles.append({
+            "fileName" : data["filename"],
+            "fileStatus" : data["status"],
+            "added_lines": data["additions"],
+            "removed_lines":data["deletions"],
+            "patch" : data.get("patch",{}),
+            "number_of_changes" : data["changes"]           
     }
-    
-    
-    
-    
-    
+        )
+    return changedFIles
+
+async def get_pull_request_difference(repoName , prNum , installationToken):
+    url =f"https://api.github.com/repos/{repoName}/pulls/{prNum}"
+    headers = {
+             "Authorization": f"Bearer {installationToken}",
+             "Accept" : "application/vnd.github.diff",
+             "X-GitHub-Api-Version":"2026-03-10"
+        }
+    async with httpx.AsyncClient() as client :
+        response = await client.get(url,headers=headers)
+    response.raise_for_status()
+    return response.text
+
