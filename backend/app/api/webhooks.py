@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
-from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req)
+from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files)
 
 router = APIRouter()
 @router.post("/webhook")
@@ -59,6 +59,7 @@ async def webhook_receiver(request:Request):
             )
         jwtToken = generate_JWS_Token(os.getenv("GITHUB_APP_ID") , privateKey=privateKey)
         logger.info(f"jwt token successfully created")  
+        
         installationToken = await  get_installation_token(installation_id,jwtToken)
         if not installationToken:
             raise HTTPException(
@@ -71,11 +72,19 @@ async def webhook_receiver(request:Request):
         logger.info(f"description of repository : {prData["description"]}")
         logger.info(f"base repository : {prData["base_branch"]}")
         logger.info(f"head repository : {prData["head_branch"]}")
+        
+        fileChanged = await get_changed_files(repoName,prNum, installationToken)
+        logger.info(f"fileNAme : {fileChanged["fileName"]}")
+        logger.info(f"status : {fileChanged["fileStatus"]}")
+        logger.info(f"additions : {fileChanged["added_lines"]}")
+        logger.info(f"deletions : {fileChanged["removed_lines"]}")
+        logger.info(f"changes : {fileChanged["number_of_changes"]}")
+        logger.info(f"patch : {fileChanged["patch"]}")
         return {
             "status": "successfull",
             "message" : f"pr event : {eventType} logged"
         }
-
+        
     return {
         "status" :"ignored",
         "message" : f"Event : {eventType} ignored"
