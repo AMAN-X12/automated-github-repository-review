@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
-from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files,get_pull_request_difference)
-
+from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files,get_pull_request_difference,)
+from app.services.llm_service import (analyze_pr_diff)
 router = APIRouter()
 @router.post("/webhook")
 async def webhook_receiver(request:Request):
@@ -78,6 +78,10 @@ async def webhook_receiver(request:Request):
         
         prDifferences = await get_pull_request_difference(repoName, prNum, installationToken)
         logger.info(f"the differences in files includes : {prDifferences}")
+        
+        llmReview = await analyze_pr_diff(prDifferences)
+        for finding in llmReview:
+            logger.info(f"[{finding.severity}] {finding.file}:{finding.line} - {finding.explanation} {finding.catehory} {finding.suggestion}")
         return {
             "status": "successfull",
             "message" : f"pr event : {eventType} logged"

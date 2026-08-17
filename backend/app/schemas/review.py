@@ -7,7 +7,7 @@ class ReviewFinding(BaseModel):
     severity : str
     category:str
     explanation : str
-    sugestion : str
+    suggestion : str
     
 class ReviewResult(BaseModel):
     findings : list[ReviewFinding]
