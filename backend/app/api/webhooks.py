@@ -82,6 +82,7 @@ async def webhook_receiver(request:Request):
         llmReview = await analyze_pr_diff(prDifferences)
         for finding in llmReview.findings:
             logger.info(f"[{finding.severity}] {finding.file}:{finding.line} - {finding.explanation} {finding.category} {finding.suggestion}")
+        
         return {
             "status": "successfull",
             "message" : f"pr event : {eventType} logged"
