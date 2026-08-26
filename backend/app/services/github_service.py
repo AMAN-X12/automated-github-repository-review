@@ -2,12 +2,12 @@ import time
 import logging 
 import jwt
 import httpx
-
+logger=logging.getLogger(__name__)
 def generate_JWS_Token(appID, privateKey):
     timeNow= int (time.time())
     print(f"time now :{timeNow}")
     payload = {
-        "iat" : timeNow ,
+        "iat" : timeNow - 60 ,
         "exp" : timeNow + (10*60),
         "iss" : appID
         
@@ -92,3 +92,41 @@ async def get_pull_request_difference(repoName , prNum , installationToken):
     response.raise_for_status()
     return response.text
 
+async def postReview(repoName , prNum , installationToken, AiResponse):
+    commentsPayload = []
+    for finding in AiResponse.findings:
+        formatedBody = (
+            f" **{finding.severity.upper()}** - {finding.category}\n\n"
+            f"{finding.explanation}\n\n"
+            f"**Suggestion:** {finding.suggestion}"
+        )
+        commentsPayload.append({
+            "path": finding.file,
+            "line": finding.line,
+            "body": formatedBody
+        })
+    if commentsPayload :
+            summary = f"Code review completed. found {len(commentsPayload)} issue found in pull req"
+            eventType = "COMMENT"
+    else :
+            summary = "Code review completed. No issue Found in pull req"
+            eventType = "APPROVE"
+    paylaod = {
+        "body" : summary,
+        "event" : eventType,
+        "comments":commentsPayload
+    }
+    url = f"https://api.github.com/repos/{repoName}/pulls/{prNum}/reviews"
+    headers = {
+             "Authorization": f"Bearer {installationToken}",
+             "Accept" : "application/vnd.github+json",
+             "X-GitHub-Api-Version":"2026-03-10"
+        }
+    async with httpx.AsyncClient() as client :
+        response = await client.post (url,json=paylaod,headers=headers)
+    if response.status_code in (200,201):
+        logger.info("successfully made a post req to github")
+    else :
+        logger.info("post req to gihub failed")
+        
+    
