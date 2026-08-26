@@ -7,7 +7,7 @@ def generate_JWS_Token(appID, privateKey):
     timeNow= int (time.time())
     print(f"time now :{timeNow}")
     payload = {
-        "iat" : timeNow ,
+        "iat" : timeNow - 60 ,
         "exp" : timeNow + (10*60),
         "iss" : appID
         
@@ -95,11 +95,11 @@ async def get_pull_request_difference(repoName , prNum , installationToken):
 async def postReview(repoName , prNum , installationToken, AiResponse):
     commentsPayload = []
     for finding in AiResponse.findings:
-        formatedBody = {
+        formatedBody = (
             f" **{finding.severity.upper()}** - {finding.category}\n\n"
             f"{finding.explanation}\n\n"
             f"**Suggestion:** {finding.suggestion}"
-        }
+        )
         commentsPayload.append({
             "path": finding.file,
             "line": finding.line,

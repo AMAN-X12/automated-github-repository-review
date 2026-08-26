@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(level = logging.INFO)
 logger = logging.getLogger(__name__)
-from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files,get_pull_request_difference,)
+from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files,get_pull_request_difference,postReview)
 from app.services.llm_service import (analyze_pr_diff)
 router = APIRouter()
 @router.post("/webhook")
@@ -36,6 +36,10 @@ async def webhook_receiver(request:Request):
     if eventType == "pull_request":
         payload =   json.loads(body)
         action = payload.get("action")
+        allowed_actions = ["opened", "reopened", "synchronize"]
+        if action not in allowed_actions:
+            return {"status": "ignored", "message": f"Action {action} ignored"}
+        logger.info(f"processing pr action : {action}")
         repoName = payload.get("repository", {}).get("full_name","unknown_repo" )
         prNum = payload.get("pull_request", {}).get("number","unknown number")
         prAuthor = payload.get("pull_request", {}).get("user", {}).get("login","unknown_author")
@@ -82,7 +86,9 @@ async def webhook_receiver(request:Request):
         llmReview = await analyze_pr_diff(prDifferences)
         for finding in llmReview.findings:
             logger.info(f"[{finding.severity}] {finding.file}:{finding.line} - {finding.explanation} {finding.category} {finding.suggestion}")
-        
+        if llmReview.findings:
+           await postReview(repoName,prNum,installationToken,llmReview)
+           
         return {
             "status": "successfull",
             "message" : f"pr event : {eventType} logged"
