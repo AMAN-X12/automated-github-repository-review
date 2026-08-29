@@ -6,9 +6,10 @@ from app.core.config import settings
 celery_app = Celery("review_worker", broker=settings.redis_url)
 
 
-@celery_app.task
+@celery_app.task(bind = True, max_retries=3)
 def review_pull_request(repository: str, pull_request_number: int, installation_id:int):
-    with open("../automated-pr-reviewer-private-token.pem","r") as f :
+   try:
+     with open("../automated-pr-reviewer-private-token.pem","r") as f :
             privateKey = f.read()
         if not privateKey:
             raise HTTPException(
@@ -43,4 +44,7 @@ def review_pull_request(repository: str, pull_request_number: int, installation_
         if llmReview.findings:
            await postReview(repoName,prNum,installationToken,llmReview)
            
-    return {"status": "queued"}
+     return {"status": "queued"}
+    except Exception as e:
+        raise self.retry(exc=e, countdown=10)
+
