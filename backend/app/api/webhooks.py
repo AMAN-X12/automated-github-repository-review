@@ -58,8 +58,7 @@ async def webhook_receiver(request:Request):
         logger.info("Task queued successfull")
         return {
             "status": "successfull",
-            "message" : f"pr from app.workers.review_worker import review_pull_request
-            "
+            "message" : f"pr from app.workers.review_worker import review_pull_request"
         }
         
     return {

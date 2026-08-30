@@ -1,17 +1,21 @@
 from celery import Celery
 import logging
+import os
+from dotenv import load_dotenv
+load_dotenv()
 from app.services.github_service import (generate_JWS_Token, get_installation_token,get_pull_req, get_changed_files,get_pull_request_difference,postReview)
 from app.services.llm_service import (analyze_pr_diff)
 from app.core.config import settings
 import asyncio
 from fastapi import HTTPException
 
+
 celery_app = Celery("review_worker", broker=settings.redis_url)
 logger = logging.getLogger(__name__)
 
 @celery_app.task(bind = True, max_retries=3)
 def review_pull_request(self, repoName: str, prNum: int, installation_id:int):
-    def asyncPipeline():
+    async def asyncPipeline():
         with open("../automated-pr-reviewer-private-token.pem","r") as f :
              privateKey = f.read()
         if not privateKey:
@@ -22,8 +26,8 @@ def review_pull_request(self, repoName: str, prNum: int, installation_id:int):
         jwtToken = generate_JWS_Token(os.getenv("GITHUB_APP_ID") , privateKey=privateKey)
         logger.info(f"jwt token successfully created")  
 
-        nstallationToken = await  get_installation_token(installation_id,jwtToken)
-        f not installationToken:
+        installationToken = await  get_installation_token(installation_id,jwtToken)
+        if not installationToken:
                 raise HTTPException(
                    status_code=500,
                    detail="installation token generation failed"
@@ -42,7 +46,7 @@ def review_pull_request(self, repoName: str, prNum: int, installation_id:int):
         
         llmReview = await analyze_pr_diff(prDifferences)
         for finding in llmReview.findings:
-        logger.info(f"[{finding.severity}] {finding.file}:{finding.line} - {finding.explanation} {finding.category} {finding.suggestion}")
+         logger.info(f"[{finding.severity}] {finding.file}:{finding.line} - {finding.explanation} {finding.category} {finding.suggestion}")
         if llmReview.findings:
             await postReview(repoName,prNum,installationToken,llmReview)
         return {"status": "queued"}

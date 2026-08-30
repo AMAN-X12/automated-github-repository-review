@@ -10,4 +10,4 @@ app.include_router(router)
 async def root():
     return {"message" : "running"}
 
-    
+#ngrok http --url=phoniness-spiritism-expensive.ngrok-free.dev 8000
