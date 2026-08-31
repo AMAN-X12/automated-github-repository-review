@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(bind = True, max_retries=3)
 def review_pull_request(self, repoName: str, prNum: int, installation_id:int):
+    logger.info("background worker received the task")
     async def asyncPipeline():
         with open("../automated-pr-reviewer-private-token.pem","r") as f :
              privateKey = f.read()

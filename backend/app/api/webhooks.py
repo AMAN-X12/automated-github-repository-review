@@ -55,7 +55,7 @@ async def webhook_receiver(request:Request):
                 detail="installation id missing "
             )
         review_pull_request.delay(repoName,prNum,installation_id)
-        logger.info("Task queued successfull")
+        logger.info("Task sent to background worker successfull")
         return {
             "status": "successfull",
             "message" : f"pr from app.workers.review_worker import review_pull_request"

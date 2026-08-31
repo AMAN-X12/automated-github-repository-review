@@ -1,5 +1,4 @@
 fastapi
-uvicorn[standard]
 pydantic
 pydantic-settings
 sqlalchemy
@@ -12,4 +11,4 @@ PyJWT
 cryptography
 langchain-google-genai 
 langchain-core
-ngrok
+uvicorn[standard]
