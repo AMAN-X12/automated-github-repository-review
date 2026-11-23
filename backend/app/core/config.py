@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     environment: str = "development"
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/ai_pr_reviewer"
+    database_url: str = "postgresql+psycopg://postgres:password123@localhost:5432/pr_reviewer"
     redis_url: str = "redis://localhost:6379/0"
 
     # Optional until you actually wire up the GitHub App / LLM calls (Phase 1-4).
