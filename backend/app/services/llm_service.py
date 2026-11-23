@@ -31,12 +31,16 @@ reviewPrompt = ChatPromptTemplate.from_messages(
 )
 reviewChain = reviewPrompt | structuredModel
 
+
 async def analyze_pr_diff(diff):
-    try :
-        result = await reviewChain.ainvoke({"diff" : diff})
-        logger.info (f"analyzed complete : found {len(result.findings)} findings")
+    try:
+        result = await reviewChain.ainvoke({
+            "diff": diff
+        })
+        logger.info(
+            f"Analysis completed: {len(result.findings)} findings"
+        )
         return result
-    except Exception as e  :
-        logger.error("cant get the analysis ")
-        return ReviewResult(findings=[])
-        
+    except Exception:
+        logger.exception("AI analysis failed")
+        raise

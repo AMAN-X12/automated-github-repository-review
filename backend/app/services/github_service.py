@@ -35,26 +35,39 @@ async def get_installation_token(installationID, jwtToken):
     installationToken = data["token"]  
     return installationToken 
     
+
 async def get_pull_req(repoName, prNum, installationToken):
     url = f"https://api.github.com/repos/{repoName}/pulls/{prNum}"
+
     headers = {
-             "Authorization": f"Bearer {installationToken}",
-             "Accept" : "application/vnd.github+json",
-             "X-GitHub-Api-Version":"2026-03-10"
-        }
+        "Authorization": f"Bearer {installationToken}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2026-03-10"
+    }
+
     async with httpx.AsyncClient() as client:
-        response = await client.get(
-            url,
-            headers=headers
-        )
+        response = await client.get(url, headers=headers)
+
     response.raise_for_status()
     data = response.json()
+
+    github_repo = data["base"]["repo"]
+
     return {
-        "title" : data["title"],
-        "description" : data["body"],
-        "base_branch" : data["base"]["ref"],
-        "head_branch" : data["head"]["ref"]
+        # Repository information
+        "repo_id": github_repo["id"],
+        "repo_name": github_repo["name"],
+        "repo_owner": github_repo["owner"]["login"],
+
+        # Pull request information
+        "pr_number": data["number"],
+        "author": data["user"]["login"],
+        "title": data["title"],
+        "description": data["body"],
+        "base_branch": data["base"]["ref"],
+        "head_branch": data["head"]["ref"]
     }
+
     
 async def get_changed_files(repoName , prNum , installationToken):
     url = f"https://api.github.com/repos/{repoName}/pulls/{prNum}/files"
